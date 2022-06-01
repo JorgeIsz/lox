@@ -1,4 +1,4 @@
-use std::fmt::{self, write, Display};
+use std::{fmt::{self, Display}, collections::HashMap};
 
 fn error(line: usize, message: &str) {
     report(line, message, "");
@@ -8,6 +8,7 @@ fn report(line: usize, message: &str, location: &str) {
     eprintln!("[line {}], Error {}: {}", line, location, message);
 }
 
+#[derive(Copy, Clone)]
 pub enum TokenType {
     // Single-character tokens.
     LeftParen,
@@ -92,22 +93,43 @@ impl Display for Token {
     }
 }
 
-pub struct Scanner {
+pub struct Scanner<'a> {
     source: String,
     pub tokens: Vec<Token>,
     start: usize,
     current: usize,
     line: usize,
+    keywords: HashMap<&'a str,TokenType>,
 }
 
-impl Scanner {
+impl<'a> Scanner<'a> {
     pub fn new(source: String) -> Self {
+
+    let mut keywords = HashMap::new();
+    keywords.insert("and",    TokenType::And);
+    keywords.insert("class",  TokenType::Class);
+    keywords.insert("else",   TokenType::Else);
+    keywords.insert("false",  TokenType::False);
+    keywords.insert("for",    TokenType::For);
+    keywords.insert("fun",    TokenType::Fun);
+    keywords.insert("if",     TokenType::If);
+    keywords.insert("nil",    TokenType::Nil);
+    keywords.insert("or",     TokenType::Or);
+    keywords.insert("print",  TokenType::Print);
+    keywords.insert("return", TokenType::Return);
+    keywords.insert("super",  TokenType::Super);
+    keywords.insert("this",   TokenType::This);
+    keywords.insert("true",   TokenType::True);
+    keywords.insert("var",    TokenType::Var);
+    keywords.insert("while",  TokenType::While);
+
         Scanner {
             source,
             tokens: Vec::new(),
             start: 0,
             current: 0,
             line: 1,
+            keywords
         }
     }
 
@@ -182,6 +204,9 @@ impl Scanner {
                 if self.is_digit(c) {
                     self.number();
                 }
+                else if self.is_alpha(c) {
+                    self.identifier();
+                }
                 else {
                     error(self.line, "Unexpected character");
                 }
@@ -205,6 +230,25 @@ impl Scanner {
 
     fn is_digit(&self, c:char) -> bool {
         "0123456789".contains(c)
+    }
+
+    fn is_alpha(&self, c:char) -> bool {
+        let characters = "_abcdefghijklmnopqrstuvwxyz";
+        characters.contains(c) || characters.to_uppercase().contains(c)
+    }
+
+    fn identifier(&mut self) {
+        while self.is_alpha(self.peek()) {
+            self.advance();
+        }
+
+        let text = self.source.get(self.start..self.current).unwrap();
+        let token_type = match self.keywords.get(text) {
+            Some(t) => t,
+            _ => &TokenType::Identifier,
+        };
+
+        self.add_token(*token_type, None);
     }
 
     fn number(&mut self) {

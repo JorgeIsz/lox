@@ -6,7 +6,7 @@ use std::process;
 use rlox::Scanner;
 
 fn run(source: String) -> bool {
-    let mut scanner: Scanner<String> = Scanner::new(source);
+    let mut scanner: Scanner = Scanner::new(source);
     scanner.scan_tokens();
     for token in scanner.tokens {
         println!("{}", token);
