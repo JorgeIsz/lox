@@ -3,7 +3,9 @@ use std::fs;
 use std::io::{self, Write};
 use std::process;
 
-use rlox::Scanner;
+mod scanner;
+mod errors;
+use crate::scanner::Scanner;
 
 fn run(source: String) -> bool {
     let mut scanner: Scanner = Scanner::new(source);
