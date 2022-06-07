@@ -1,13 +1,13 @@
-#[path="errors.rs"] mod errors;
+#[path = "errors.rs"]
+mod errors;
 pub mod token;
 pub mod tokenType;
 
 use std::collections::HashMap;
 
+use self::token::{LiteralType, Token};
 use self::tokenType::TokenType;
-use self::token::{Token,LiteralType};
 use crate::errors::error;
-
 
 pub struct Scanner<'a> {
     source: String,
@@ -15,29 +15,28 @@ pub struct Scanner<'a> {
     start: usize,
     current: usize,
     line: usize,
-    keywords: HashMap<&'a str,TokenType>,
+    keywords: HashMap<&'a str, TokenType>,
 }
 
 impl<'a> Scanner<'a> {
     pub fn new(source: String) -> Self {
-
-    let mut keywords = HashMap::new();
-    keywords.insert("and",    TokenType::And);
-    keywords.insert("class",  TokenType::Class);
-    keywords.insert("else",   TokenType::Else);
-    keywords.insert("false",  TokenType::False);
-    keywords.insert("for",    TokenType::For);
-    keywords.insert("fun",    TokenType::Fun);
-    keywords.insert("if",     TokenType::If);
-    keywords.insert("nil",    TokenType::Nil);
-    keywords.insert("or",     TokenType::Or);
-    keywords.insert("print",  TokenType::Print);
-    keywords.insert("return", TokenType::Return);
-    keywords.insert("super",  TokenType::Super);
-    keywords.insert("this",   TokenType::This);
-    keywords.insert("true",   TokenType::True);
-    keywords.insert("var",    TokenType::Var);
-    keywords.insert("while",  TokenType::While);
+        let mut keywords = HashMap::new();
+        keywords.insert("and", TokenType::And);
+        keywords.insert("class", TokenType::Class);
+        keywords.insert("else", TokenType::Else);
+        keywords.insert("false", TokenType::False);
+        keywords.insert("for", TokenType::For);
+        keywords.insert("fun", TokenType::Fun);
+        keywords.insert("if", TokenType::If);
+        keywords.insert("nil", TokenType::Nil);
+        keywords.insert("or", TokenType::Or);
+        keywords.insert("print", TokenType::Print);
+        keywords.insert("return", TokenType::Return);
+        keywords.insert("super", TokenType::Super);
+        keywords.insert("this", TokenType::This);
+        keywords.insert("true", TokenType::True);
+        keywords.insert("var", TokenType::Var);
+        keywords.insert("while", TokenType::While);
 
         Scanner {
             source,
@@ -45,7 +44,7 @@ impl<'a> Scanner<'a> {
             start: 0,
             current: 0,
             line: 1,
-            keywords
+            keywords,
         }
     }
 
@@ -119,14 +118,12 @@ impl<'a> Scanner<'a> {
             _ => {
                 if self.is_digit(c) {
                     self.number();
-                }
-                else if self.is_alpha(c) {
+                } else if self.is_alpha(c) {
                     self.identifier();
-                }
-                else {
+                } else {
                     error(self.line, "Unexpected character");
                 }
-            },
+            }
         }
     }
 
@@ -144,13 +141,20 @@ impl<'a> Scanner<'a> {
         return self.source.chars().nth(self.current + 1).unwrap();
     }
 
-    fn is_digit(&self, c:char) -> bool {
+    fn is_digit(&self, c: char) -> bool {
         "0123456789".contains(c)
     }
 
-    fn is_alpha(&self, c:char) -> bool {
+    fn is_alpha(&self, c: char) -> bool {
         let characters = "_abcdefghijklmnopqrstuvwxyz";
         characters.contains(c) || characters.to_uppercase().contains(c)
+    }
+
+    fn get_token_type_from_keyword(&self, text: &str) -> TokenType {
+        match self.keywords.get(text) {
+            Some(t) => t.clone(),
+            _ => TokenType::Identifier,
+        }
     }
 
     fn identifier(&mut self) {
@@ -160,13 +164,8 @@ impl<'a> Scanner<'a> {
 
         let text = self.source.get(self.start..self.current).unwrap();
 
-        // TODO: arreglar esta advertencia
-        let token_type = match self.keywords.get(text) {
-            Some(t) => t,
-            _ => &TokenType::Identifier,
-        };
-
-        self.add_token(*token_type, None);
+        let token_type = self.get_token_type_from_keyword(text);
+        self.add_token(token_type, None);
     }
 
     fn number(&mut self) {
@@ -182,10 +181,14 @@ impl<'a> Scanner<'a> {
             }
         }
 
-        let value = self.source.get(self.start..self.current).unwrap().parse::<f64>().unwrap();
+        let value = self
+            .source
+            .get(self.start..self.current)
+            .unwrap()
+            .parse::<f64>()
+            .unwrap();
         let literal = Some(LiteralType::LNumber(value));
         self.add_token(TokenType::Number, literal);
-
     }
 
     fn string(&mut self) {

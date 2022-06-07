@@ -1,4 +1,3 @@
-
 #[derive(Copy, Clone)]
 pub enum TokenType {
     // Single-character tokens.
@@ -49,5 +48,3 @@ pub enum TokenType {
 
     EOF,
 }
-
-

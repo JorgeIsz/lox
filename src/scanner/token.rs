@@ -35,5 +35,3 @@ impl Display for Token {
         write!(f, "{}", self.lexeme)
     }
 }
-
-
