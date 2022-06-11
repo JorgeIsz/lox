@@ -2,11 +2,15 @@ use std::fmt::{self, Display};
 
 use crate::scanner::tokenType::TokenType;
 
+#[derive(Clone)]
 pub enum LiteralType {
     LString(String),
     LNumber(f64),
+    LBoolean(bool),
+    LNil,
 }
 
+#[derive(Clone)]
 pub struct Token {
     pub token_type: TokenType,
     pub lexeme: String,

@@ -3,16 +3,21 @@ use std::fs;
 use std::io::{self, Write};
 use std::process;
 
-mod scanner;
-mod errors;
-use crate::scanner::Scanner;
+use rlox::ast_printer::AstPrinter;
+use rlox::parser::Parser;
+
+use rlox::scanner::Scanner;
 
 fn run(source: String) -> bool {
     let mut scanner: Scanner = Scanner::new(source);
     scanner.scan_tokens();
-    for token in scanner.tokens {
-        println!("{}", token);
-    }
+
+    let tokens = scanner.tokens;
+    let printer = AstPrinter {};
+    let mut parser = Parser::new(tokens);
+    // TODO: add parsing errors context here
+    let expression = parser.parse();
+    println!("{}", printer.print(expression));
 
     return false;
 }

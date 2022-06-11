@@ -34,6 +34,8 @@ impl Visitor<String> for AstPrinter {
         match literal {
             LiteralType::LString(val) => val,
             LiteralType::LNumber(val) => val.to_string(),
+            LiteralType::LBoolean(val) => val.to_string(),
+            LiteralType::LNil => "nil".to_string(),
         }
     }
 
