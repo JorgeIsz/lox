@@ -3,7 +3,7 @@ use std::fs;
 use std::io::{self, Write};
 use std::process;
 
-use rlox::ast_printer::AstPrinter;
+use rlox::interpreter::Interpreter;
 use rlox::parser::Parser;
 
 use rlox::scanner::Scanner;
@@ -13,11 +13,11 @@ fn run(source: String) -> bool {
     scanner.scan_tokens();
 
     let tokens = scanner.tokens;
-    let printer = AstPrinter {};
     let mut parser = Parser::new(tokens);
     // TODO: add parsing errors context here
     let expression = parser.parse();
-    println!("{}", printer.print(expression));
+    let interpreter = Interpreter {};
+    interpreter.interpret(expression);
 
     return false;
 }

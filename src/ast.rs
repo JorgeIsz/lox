@@ -1,5 +1,6 @@
 use crate::scanner::token::{LiteralType, Token};
 
+#[derive(Clone)]
 pub enum Expr {
     Binary(Box<Expr>, Token, Box<Expr>),
     Grouping(Box<Expr>),
@@ -19,6 +20,6 @@ pub trait Visitor<T> {
 
     fn visit_binary_expr(&self, left: Box<Expr>, token: Token, right: Box<Expr>) -> T;
     fn visit_grouping_expr(&self, expr: Box<Expr>) -> T;
-    fn visit_literal_expr(&self, lilteral: LiteralType) -> T;
+    fn visit_literal_expr(&self, literal: LiteralType) -> T;
     fn visit_unary_expr(&self, token: Token, expr: Box<Expr>) -> T;
 }
