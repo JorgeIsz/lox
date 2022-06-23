@@ -1,5 +1,5 @@
 use crate::{
-    ast::Expr,
+    ast::{Expr, Stmt},
     scanner::{
         token::{LiteralType, Token},
         tokenType::TokenType,
@@ -16,8 +16,32 @@ impl Parser {
         Parser { tokens, current: 0 }
     }
 
-    pub fn parse(&mut self) -> Expr {
-        self.expression()
+    pub fn parse(&mut self) -> Vec<Stmt> {
+        let mut statements = vec![];
+        while !self.is_at_end() {
+            statements.push(self.statement());
+        }
+
+        statements
+    }
+
+    fn statement(&mut self)  -> Stmt {
+        if self.match_types(vec![TokenType::Print]) {
+            return self.print_statement();
+        }
+        return self.expression_statement();
+    }
+
+    fn print_statement(&mut self) -> Stmt {
+        let value = self.expression();
+        self.consume(TokenType::Semicolon, "Expect ; after value.");
+        Stmt::Print(Box::new(value))
+    }
+
+    fn expression_statement(&mut self) -> Stmt {
+        let value = self.expression();
+        self.consume(TokenType::Semicolon, "Expect ; after expression.");
+        Stmt::Expression(Box::new(value))
     }
 
     fn expression(&mut self) -> Expr {
@@ -111,7 +135,7 @@ impl Parser {
         }
 
         // TODO: add better error handling
-        panic!("ParseError:  ({}) : {}", self.peek(), message)
+        panic!("ParseError: <{}>:{}", self.peek(), message)
     }
 
     fn match_types(&mut self, types: Vec<TokenType>) -> bool {

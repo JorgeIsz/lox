@@ -1,5 +1,5 @@
 use crate::{
-    ast::{Expr, Visitor},
+    ast::{Expr, Visitor, StmtVisitor, Stmt},
     scanner::{
         token::{LiteralType, Token},
         tokenType::TokenType,
@@ -13,13 +13,18 @@ struct LoxValue {
 pub struct Interpreter {}
 
 impl Interpreter {
-    pub fn interpret(&self, expr: Expr) {
-        let e = self.evaluate(&expr);
-        println!("{}", e.value.stringify());
+    pub fn interpret(&self, statements: Vec<Stmt> ) {
+        for statement in statements {
+            self.execute(statement);
+        }
+    }
+
+    fn execute(&self, stmt:Stmt) {
+        self.handle_stmt(stmt);
     }
 
     fn evaluate(&self, expr: &Expr) -> LoxValue {
-        self.handle(expr.clone())
+        self.handle_expr(expr.clone())
     }
 
     fn is_truthy(&self, object: Option<LoxValue>) -> bool {
@@ -80,5 +85,17 @@ impl Visitor<LoxValue> for Interpreter {
         };
 
         LoxValue { value }
+    }
+}
+
+impl StmtVisitor for Interpreter {
+    fn visit_print_stmt(&self, expr:Box<Expr>) {
+        let value = self.evaluate(&expr);
+        println!("{}", value.value.stringify());
+        
+    }
+
+    fn visit_expression_stmt(&self, expr:Box<Expr>) {
+        self.evaluate(&expr);
     }
 }

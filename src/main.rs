@@ -1,8 +1,10 @@
 use std::env;
 use std::fs;
+use std::io::BufRead;
 use std::io::{self, Write};
 use std::process;
 
+use rlox::ast::Stmt;
 use rlox::interpreter::Interpreter;
 use rlox::parser::Parser;
 
@@ -15,9 +17,10 @@ fn run(source: String) -> bool {
     let tokens = scanner.tokens;
     let mut parser = Parser::new(tokens);
     // TODO: add parsing errors context here
-    let expression = parser.parse();
+    let statements = parser.parse();
     let interpreter = Interpreter {};
-    interpreter.interpret(expression);
+
+    interpreter.interpret(statements);
 
     return false;
 }

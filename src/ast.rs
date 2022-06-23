@@ -9,7 +9,7 @@ pub enum Expr {
 }
 
 pub trait Visitor<T> {
-    fn handle(&self, expr: Expr) -> T {
+    fn handle_expr(&self, expr: Expr) -> T {
         match expr {
             Expr::Binary(left, token, right) => self.visit_binary_expr(left, token, right),
             Expr::Literal(literal) => self.visit_literal_expr(literal),
@@ -22,4 +22,22 @@ pub trait Visitor<T> {
     fn visit_grouping_expr(&self, expr: Box<Expr>) -> T;
     fn visit_literal_expr(&self, literal: LiteralType) -> T;
     fn visit_unary_expr(&self, token: Token, expr: Box<Expr>) -> T;
+}
+
+pub enum Stmt {
+    Expression(Box<Expr>),
+    Print(Box<Expr>),
+}
+
+pub trait StmtVisitor {
+    fn handle_stmt(&self, stmt: Stmt) {
+        match stmt {
+            Stmt::Expression(expr) => self.visit_expression_stmt(expr),
+            Stmt::Print(expr) => self.visit_print_stmt(expr),
+        }
+    }
+
+    fn visit_expression_stmt(&self, expr:Box<Expr>);
+    fn visit_print_stmt(&self, expr:Box<Expr>);
+
 }

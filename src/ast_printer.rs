@@ -5,7 +5,7 @@ pub struct AstPrinter {}
 
 impl AstPrinter {
     pub fn print(&self, expr: Expr) -> String {
-        self.handle(expr)
+        self.handle_expr(expr)
     }
 
     fn parenthesize(&self, name: &str, exprs: Vec<Expr>) -> String {
@@ -14,7 +14,7 @@ impl AstPrinter {
 
         for expr in exprs {
             res.push_str(" ");
-            res.push_str(&self.handle(expr));
+            res.push_str(&self.handle_expr(expr));
         }
         res.push_str(")");
 
