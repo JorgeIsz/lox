@@ -130,7 +130,7 @@ impl Parser {
     }
 
     fn consume(&mut self, token_type: TokenType, message: &str) -> &Token {
-        if self.match_types(vec![token_type]) {
+        if self.check(token_type) {
             return self.advance();
         }
 

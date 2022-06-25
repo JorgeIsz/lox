@@ -1,0 +1,6 @@
+print "Hello," + " " + "World";
+print "one";
+"expr";
+print 9 != 9;
+print 100 > 3;
+print 2 + 7;
