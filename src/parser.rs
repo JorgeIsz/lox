@@ -31,7 +31,6 @@ impl Parser {
         }
 
         self.statement()
-
     }
 
     fn var_declaration(&mut self) -> Stmt {
@@ -42,11 +41,14 @@ impl Parser {
             initializer = Some(Box::new(self.expression()));
         }
 
-        self.consume(TokenType::Semicolon, "Expect ';' after variable declaration.");
+        self.consume(
+            TokenType::Semicolon,
+            "Expect ';' after variable declaration.",
+        );
         Stmt::Var(name.clone(), initializer)
     }
 
-    fn statement(&mut self)  -> Stmt {
+    fn statement(&mut self) -> Stmt {
         if self.match_types(vec![TokenType::Print]) {
             return self.print_statement();
         }

@@ -32,7 +32,7 @@ pub trait Visitor<T> {
 pub enum Stmt {
     Expression(Box<Expr>),
     Print(Box<Expr>),
-    Var(Token,Option<Box<Expr>>),
+    Var(Token, Option<Box<Expr>>),
 }
 
 pub trait StmtVisitor {
@@ -44,8 +44,7 @@ pub trait StmtVisitor {
         }
     }
 
-    fn visit_expression_stmt(&self, expr:Box<Expr>);
-    fn visit_print_stmt(&self, expr:Box<Expr>);
-    fn visit_var_stmt(&self, token:Token, expr:Option<Box<Expr>>);
-
+    fn visit_expression_stmt(&self, expr: Box<Expr>);
+    fn visit_print_stmt(&self, expr: Box<Expr>);
+    fn visit_var_stmt(&self, token: Token, expr: Option<Box<Expr>>);
 }

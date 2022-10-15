@@ -1,9 +1,10 @@
 use crate::{
-    ast::{Expr, Visitor, StmtVisitor, Stmt},
+    ast::{Expr, Stmt, StmtVisitor, Visitor},
+    environment::Environment,
     scanner::{
         token::{LiteralType, Token},
         tokenType::TokenType,
-    }, environment::Environment,
+    },
 };
 
 #[derive(Clone)]
@@ -18,17 +19,17 @@ pub struct Interpreter {
 impl Interpreter {
     pub fn new() -> Interpreter {
         Interpreter {
-            environment: Environment::new()
+            environment: Environment::new(),
         }
     }
 
-    pub fn interpret(&self, statements: Vec<Stmt> ) {
+    pub fn interpret(&self, statements: Vec<Stmt>) {
         for statement in statements {
             self.execute(statement);
         }
     }
 
-    fn execute(&self, stmt:Stmt) {
+    fn execute(&self, stmt: Stmt) {
         self.handle_stmt(stmt);
     }
 
@@ -99,26 +100,23 @@ impl Visitor<LoxValue> for Interpreter {
     fn visit_variable_expr(&self, token: Token) -> LoxValue {
         self.environment.get(&token.lexeme).unwrap()
     }
-
 }
 
 impl StmtVisitor for Interpreter {
-    fn visit_print_stmt(&self, expr:Box<Expr>) {
+    fn visit_print_stmt(&self, expr: Box<Expr>) {
         let value = self.evaluate(&expr);
         println!("{}", value.value.stringify());
-        
     }
 
-    fn visit_expression_stmt(&self, expr:Box<Expr>) {
+    fn visit_expression_stmt(&self, expr: Box<Expr>) {
         self.evaluate(&expr);
     }
 
-    fn visit_var_stmt(&self, token:Token, expr:Option<Box<Expr>>) {
-        let mut value:Option<LoxValue> = None;
+    fn visit_var_stmt(&self, token: Token, expr: Option<Box<Expr>>) {
+        let mut value: Option<LoxValue> = None;
         if let Some(var) = expr {
             value = Some(self.evaluate(&var));
         }
-
 
         self.environment.define(token.lexeme, value);
     }
