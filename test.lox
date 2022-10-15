@@ -4,3 +4,9 @@ print "one";
 print 9 != 9;
 print 100 > 3;
 print 2 + 7;
+
+var a = 10;
+var b = 20;
+var c = 5;
+print a + b - c;
+print b / a;

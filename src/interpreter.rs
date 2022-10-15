@@ -3,16 +3,25 @@ use crate::{
     scanner::{
         token::{LiteralType, Token},
         tokenType::TokenType,
-    },
+    }, environment::Environment,
 };
 
-struct LoxValue {
+#[derive(Clone)]
+pub struct LoxValue {
     value: LiteralType,
 }
 
-pub struct Interpreter {}
+pub struct Interpreter {
+    environment: Environment,
+}
 
 impl Interpreter {
+    pub fn new() -> Interpreter {
+        Interpreter {
+            environment: Environment::new()
+        }
+    }
+
     pub fn interpret(&self, statements: Vec<Stmt> ) {
         for statement in statements {
             self.execute(statement);
@@ -86,6 +95,11 @@ impl Visitor<LoxValue> for Interpreter {
 
         LoxValue { value }
     }
+
+    fn visit_variable_expr(&self, token: Token) -> LoxValue {
+        self.environment.get(&token.lexeme).unwrap()
+    }
+
 }
 
 impl StmtVisitor for Interpreter {
@@ -97,5 +111,15 @@ impl StmtVisitor for Interpreter {
 
     fn visit_expression_stmt(&self, expr:Box<Expr>) {
         self.evaluate(&expr);
+    }
+
+    fn visit_var_stmt(&self, token:Token, expr:Option<Box<Expr>>) {
+        let mut value:Option<LoxValue> = None;
+        if let Some(var) = expr {
+            value = Some(self.evaluate(&var));
+        }
+
+
+        self.environment.define(token.lexeme, value);
     }
 }

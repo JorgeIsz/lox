@@ -1,3 +1,5 @@
+// inspired by / copied shamelessly from https://github.com/brightly-salty/rox/blob/master/src/ast.rs
+
 use crate::scanner::token::{LiteralType, Token};
 
 #[derive(Clone)]
@@ -6,6 +8,7 @@ pub enum Expr {
     Grouping(Box<Expr>),
     Literal(LiteralType),
     Unary(Token, Box<Expr>),
+    Variable(Token),
 }
 
 pub trait Visitor<T> {
@@ -15,6 +18,7 @@ pub trait Visitor<T> {
             Expr::Literal(literal) => self.visit_literal_expr(literal),
             Expr::Grouping(expr) => self.visit_grouping_expr(expr),
             Expr::Unary(token, expr) => self.visit_unary_expr(token, expr),
+            Expr::Variable(token) => self.visit_variable_expr(token),
         }
     }
 
@@ -22,11 +26,13 @@ pub trait Visitor<T> {
     fn visit_grouping_expr(&self, expr: Box<Expr>) -> T;
     fn visit_literal_expr(&self, literal: LiteralType) -> T;
     fn visit_unary_expr(&self, token: Token, expr: Box<Expr>) -> T;
+    fn visit_variable_expr(&self, token: Token) -> T;
 }
 
 pub enum Stmt {
     Expression(Box<Expr>),
     Print(Box<Expr>),
+    Var(Token,Option<Box<Expr>>),
 }
 
 pub trait StmtVisitor {
@@ -34,10 +40,12 @@ pub trait StmtVisitor {
         match stmt {
             Stmt::Expression(expr) => self.visit_expression_stmt(expr),
             Stmt::Print(expr) => self.visit_print_stmt(expr),
+            Stmt::Var(token, expr) => self.visit_var_stmt(token, expr),
         }
     }
 
     fn visit_expression_stmt(&self, expr:Box<Expr>);
     fn visit_print_stmt(&self, expr:Box<Expr>);
+    fn visit_var_stmt(&self, token:Token, expr:Option<Box<Expr>>);
 
 }

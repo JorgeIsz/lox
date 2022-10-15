@@ -19,10 +19,31 @@ impl Parser {
     pub fn parse(&mut self) -> Vec<Stmt> {
         let mut statements = vec![];
         while !self.is_at_end() {
-            statements.push(self.statement());
+            statements.push(self.declaration());
         }
 
         statements
+    }
+
+    fn declaration(&mut self) -> Stmt {
+        if self.match_types(vec![TokenType::Var]) {
+            return self.var_declaration();
+        }
+
+        self.statement()
+
+    }
+
+    fn var_declaration(&mut self) -> Stmt {
+        let name = self.consume(TokenType::Identifier, "Expect variable name.");
+        let mut initializer = None;
+
+        if self.match_types(vec![TokenType::Equal]) {
+            initializer = Some(Box::new(self.expression()));
+        }
+
+        self.consume(TokenType::Semicolon, "Expect ';' after variable declaration.");
+        Stmt::Var(name.clone(), initializer)
     }
 
     fn statement(&mut self)  -> Stmt {
@@ -120,6 +141,9 @@ impl Parser {
         if self.match_types(vec![TokenType::Number, TokenType::StringLiteral]) {
             return Expr::Literal(self.previous().clone().literal.unwrap());
         }
+        if self.match_types(vec![TokenType::Identifier]) {
+            return Expr::Variable(self.previous().clone());
+        }
         if self.match_types(vec![TokenType::LeftParen]) {
             let expr = self.expression();
             self.consume(TokenType::RightParen, "Expect ')' after expression");
@@ -129,9 +153,9 @@ impl Parser {
         panic!("Expect expression");
     }
 
-    fn consume(&mut self, token_type: TokenType, message: &str) -> &Token {
+    fn consume(&mut self, token_type: TokenType, message: &str) -> Token {
         if self.check(token_type) {
-            return self.advance();
+            return self.advance().clone();
         }
 
         // TODO: add better error handling
