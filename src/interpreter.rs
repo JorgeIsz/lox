@@ -100,6 +100,12 @@ impl Visitor<LoxValue> for Interpreter {
     fn visit_variable_expr(&self, token: Token) -> LoxValue {
         self.environment.get(&token.lexeme).unwrap()
     }
+
+    fn visit_assign_expr(&self, token: Token, expr: Box<Expr>) -> LoxValue {
+        let value = self.evaluate(&expr);
+        self.environment.assign(token.lexeme, &value);
+        value
+    }
 }
 
 impl StmtVisitor for Interpreter {

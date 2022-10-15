@@ -8,5 +8,8 @@ print 2 + 7;
 var a = 10;
 var b = 20;
 var c = 5;
-print a + b - c;
 print b / a;
+print a + b - c;
+
+c = 100;
+print c + a;
