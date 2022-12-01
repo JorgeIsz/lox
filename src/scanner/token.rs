@@ -1,6 +1,6 @@
 use std::{
     fmt::{self, Display},
-    ops::{Add, Div, Mul, Sub},
+    ops::{Add, Deref, Div, Mul, Sub},
 };
 
 use crate::scanner::tokenType::TokenType;

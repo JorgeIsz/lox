@@ -3,30 +3,33 @@ use std::fs;
 use std::io::{self, Write};
 use std::process;
 
+use rlox::errors::LoxResult;
 use rlox::interpreter::Interpreter;
 use rlox::parser::Parser;
 
 use rlox::scanner::Scanner;
 
-fn run(source: String) -> bool {
+fn run(source: String) -> LoxResult<()> {
     let mut scanner: Scanner = Scanner::new(source);
-    scanner.scan_tokens();
+
+    scanner.scan_tokens()?;
 
     let tokens = scanner.tokens;
     let mut parser = Parser::new(tokens);
-    // TODO: add parsing errors context here
-    let statements = parser.parse();
+
+    let statements = parser.parse()?;
     let interpreter = Interpreter::new();
 
     interpreter.interpret(statements);
 
-    return false;
+    Ok(())
 }
 
 fn run_file(path: &str) {
     let content = fs::read_to_string(path).expect("File not found");
-    let had_error = run(content);
-    if had_error {
+    let result = run(content);
+    if let Err(error) = result {
+        error.report();
         process::exit(1);
     }
 }
@@ -37,7 +40,9 @@ fn run_prompt() {
         print!("> ");
         let _ = io::stdout().flush();
         io::stdin().read_line(&mut line).unwrap();
-        run(line);
+        if let Err(error) = run(line) {
+            error.report();
+        }
     }
 }
 

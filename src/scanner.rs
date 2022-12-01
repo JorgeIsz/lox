@@ -7,7 +7,7 @@ use std::collections::HashMap;
 
 use self::token::{LiteralType, Token};
 use self::tokenType::TokenType;
-use crate::errors::error;
+use crate::errors::{Error, LoxResult};
 
 pub struct Scanner<'a> {
     source: String,
@@ -48,21 +48,27 @@ impl<'a> Scanner<'a> {
         }
     }
 
-    pub fn scan_tokens(&mut self) {
+    pub fn scan_tokens(&mut self) -> LoxResult<()> {
         while !self.is_at_end() {
             self.start = self.current;
-            self.scan_token();
+            if let Err(error) = self.scan_token() {
+                error.report();
+            }
         }
         self.tokens
             .push(Token::new(TokenType::EOF, "".to_string(), None, self.line));
+
+        Ok(())
     }
 
     pub fn is_at_end(&self) -> bool {
         self.current >= self.source.len()
     }
 
-    fn scan_token(&mut self) {
+    fn scan_token(&mut self) -> LoxResult<()> {
         let c = self.advance();
+
+        let mut result = Ok(());
 
         match c {
             '(' => self.add_token(TokenType::LeftParen, None),
@@ -112,7 +118,7 @@ impl<'a> Scanner<'a> {
                     self.add_token(TokenType::Slash, None);
                 }
             }
-            '"' => self.string(),
+            '"' => self.string()?,
             ' ' | '\r' | '\t' => (),
             '\n' => self.line += 1,
             _ => {
@@ -121,10 +127,15 @@ impl<'a> Scanner<'a> {
                 } else if self.is_alpha(c) {
                     self.identifier();
                 } else {
-                    error(self.line, "Unexpected character");
+                    result = Err(Error::ScannerError(
+                        self.line,
+                        "Unexpected character".to_string(),
+                    ));
                 }
             }
-        }
+        };
+
+        result
     }
 
     fn peek(&self) -> char {
@@ -191,7 +202,7 @@ impl<'a> Scanner<'a> {
         self.add_token(TokenType::Number, literal);
     }
 
-    fn string(&mut self) {
+    fn string(&mut self) -> LoxResult<()> {
         while self.peek() != '"' && !self.is_at_end() {
             if self.peek() == '\n' {
                 self.line += 1
@@ -200,7 +211,10 @@ impl<'a> Scanner<'a> {
         }
 
         if self.is_at_end() {
-            error(self.line, "Unterminated string.");
+            Err(Error::ScannerError(
+                self.line,
+                "Unterminated string.".to_string(),
+            ))
         } else {
             // The closing ".
             self.advance();
@@ -209,6 +223,8 @@ impl<'a> Scanner<'a> {
             let value = self.source.get(self.start + 1..self.current - 1).unwrap();
             let literal = Some(LiteralType::LString(value.to_string()));
             self.add_token(TokenType::StringLiteral, literal);
+
+            Ok(())
         }
     }
 

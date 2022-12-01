@@ -1,5 +1,6 @@
 use crate::{
     ast::{Expr, Stmt},
+    errors::{Error, LoxResult},
     scanner::{
         token::{LiteralType, Token},
         tokenType::TokenType,
@@ -16,16 +17,16 @@ impl Parser {
         Parser { tokens, current: 0 }
     }
 
-    pub fn parse(&mut self) -> Vec<Stmt> {
+    pub fn parse(&mut self) -> LoxResult<Vec<Stmt>> {
         let mut statements = vec![];
         while !self.is_at_end() {
-            statements.push(self.declaration());
+            statements.push(self.declaration()?);
         }
 
-        statements
+        Ok(statements)
     }
 
-    fn declaration(&mut self) -> Stmt {
+    fn declaration(&mut self) -> LoxResult<Stmt> {
         if self.match_types(vec![TokenType::Var]) {
             return self.var_declaration();
         }
@@ -33,73 +34,76 @@ impl Parser {
         self.statement()
     }
 
-    fn var_declaration(&mut self) -> Stmt {
-        let name = self.consume(TokenType::Identifier, "Expect variable name.");
+    fn var_declaration(&mut self) -> LoxResult<Stmt> {
+        let name = self.consume(TokenType::Identifier, "Expect variable name.")?;
         let mut initializer = None;
 
         if self.match_types(vec![TokenType::Equal]) {
-            initializer = Some(Box::new(self.expression()));
+            initializer = Some(Box::new(self.expression()?));
         }
 
         self.consume(
             TokenType::Semicolon,
             "Expect ';' after variable declaration.",
         );
-        Stmt::Var(name.clone(), initializer)
+        Ok(Stmt::Var(name.clone(), initializer))
     }
 
-    fn statement(&mut self) -> Stmt {
+    fn statement(&mut self) -> LoxResult<Stmt> {
         if self.match_types(vec![TokenType::Print]) {
             return self.print_statement();
         }
         return self.expression_statement();
     }
 
-    fn print_statement(&mut self) -> Stmt {
-        let value = self.expression();
+    fn print_statement(&mut self) -> LoxResult<Stmt> {
+        let value = self.expression()?;
         self.consume(TokenType::Semicolon, "Expect ; after value.");
-        Stmt::Print(Box::new(value))
+        Ok(Stmt::Print(Box::new(value)))
     }
 
-    fn expression_statement(&mut self) -> Stmt {
-        let value = self.expression();
+    fn expression_statement(&mut self) -> LoxResult<Stmt> {
+        let value = self.expression()?;
         self.consume(TokenType::Semicolon, "Expect ; after expression.");
-        Stmt::Expression(Box::new(value))
+        Ok(Stmt::Expression(Box::new(value)))
     }
 
-    fn expression(&mut self) -> Expr {
+    fn expression(&mut self) -> LoxResult<Expr> {
         self.assignment()
     }
 
-    fn assignment(&mut self) -> Expr {
-        let expr = self.equality();
+    fn assignment(&mut self) -> LoxResult<Expr> {
+        let expr = self.equality()?;
 
         if self.match_types(vec![TokenType::Equal]) {
-            let value = self.assignment();
+            let value = self.assignment()?;
 
             if let Expr::Variable(token) = expr {
-                return Expr::Assign(token, Box::new(value));
+                return Ok(Expr::Assign(token, Box::new(value)));
             }
 
-            panic!("Invalid assignment target");
+            return Err(Error::ParseError(
+                self.peek().line,
+                "Invalid assignment target".to_string(),
+            ));
         }
 
-        expr
+        Ok(expr)
     }
 
-    fn equality(&mut self) -> Expr {
-        let mut expr = self.comparison();
+    fn equality(&mut self) -> LoxResult<Expr> {
+        let mut expr = self.comparison()?;
 
         while self.match_types(vec![TokenType::BangEqual, TokenType::EqualEqual]) {
             let operator = self.previous().clone();
-            let right = self.comparison();
+            let right = self.comparison()?;
             expr = Expr::Binary(Box::new(expr), operator, Box::new(right));
         }
-        expr
+        Ok(expr)
     }
 
-    fn comparison(&mut self) -> Expr {
-        let mut expr = self.term();
+    fn comparison(&mut self) -> LoxResult<Expr> {
+        let mut expr = self.term()?;
 
         while self.match_types(vec![
             TokenType::Greater,
@@ -108,76 +112,75 @@ impl Parser {
             TokenType::LessEqual,
         ]) {
             let operator = self.previous().clone();
-            let right = self.term();
+            let right = self.term()?;
             expr = Expr::Binary(Box::new(expr), operator, Box::new(right));
         }
 
-        expr
+        Ok(expr)
     }
 
-    fn term(&mut self) -> Expr {
-        let mut expr = self.factor();
+    fn term(&mut self) -> LoxResult<Expr> {
+        let mut expr = self.factor()?;
 
         while self.match_types(vec![TokenType::Minus, TokenType::Plus]) {
             let operator = self.previous().clone();
-            let right = self.factor();
+            let right = self.factor()?;
             expr = Expr::Binary(Box::new(expr), operator, Box::new(right));
         }
 
-        expr
+        Ok(expr)
     }
 
-    fn factor(&mut self) -> Expr {
-        let mut expr = self.unary();
+    fn factor(&mut self) -> LoxResult<Expr> {
+        let mut expr = self.unary()?;
         while self.match_types(vec![TokenType::Slash, TokenType::Star]) {
             let operator = self.previous().clone();
-            let right = self.unary();
+            let right = self.unary()?;
             expr = Expr::Binary(Box::new(expr), operator, Box::new(right));
         }
-        expr
+        Ok(expr)
     }
 
-    fn unary(&mut self) -> Expr {
+    fn unary(&mut self) -> LoxResult<Expr> {
         if self.match_types(vec![TokenType::Bang, TokenType::Minus]) {
             let operator = self.previous().clone();
-            let right = self.unary();
-            return Expr::Unary(operator, Box::new(right));
+            let right = self.unary()?;
+            return Ok(Expr::Unary(operator, Box::new(right)));
         }
         self.primary()
     }
 
-    fn primary(&mut self) -> Expr {
+    fn primary(&mut self) -> LoxResult<Expr> {
         if self.match_types(vec![TokenType::False]) {
-            return Expr::Literal(LiteralType::LBoolean(false));
+            return Ok(Expr::Literal(LiteralType::LBoolean(false)));
         }
         if self.match_types(vec![TokenType::True]) {
-            return Expr::Literal(LiteralType::LBoolean(true));
+            return Ok(Expr::Literal(LiteralType::LBoolean(true)));
         }
         if self.match_types(vec![TokenType::Nil]) {
-            return Expr::Literal(LiteralType::LNil);
+            return Ok(Expr::Literal(LiteralType::LNil));
         }
         if self.match_types(vec![TokenType::Number, TokenType::StringLiteral]) {
-            return Expr::Literal(self.previous().clone().literal.unwrap());
+            return Ok(Expr::Literal(self.previous().clone().literal.unwrap()));
         }
         if self.match_types(vec![TokenType::Identifier]) {
-            return Expr::Variable(self.previous().clone());
+            return Ok(Expr::Variable(self.previous().clone()));
         }
         if self.match_types(vec![TokenType::LeftParen]) {
-            let expr = self.expression();
-            self.consume(TokenType::RightParen, "Expect ')' after expression");
-            return Expr::Grouping(Box::new(expr));
+            let expr = self.expression()?;
+            self.consume(TokenType::RightParen, "Expect ')' after expression")?;
+            return Ok(Expr::Grouping(Box::new(expr)));
         }
 
-        panic!("Expect expression");
+        Err(Error::ParseError(self.peek().line, "Expect expression".to_string()))
     }
 
-    fn consume(&mut self, token_type: TokenType, message: &str) -> Token {
+    fn consume(&mut self, token_type: TokenType, message: &str) -> LoxResult<Token> {
         if self.check(token_type) {
-            return self.advance().clone();
+            return Ok(self.advance().clone());
         }
 
-        // TODO: add better error handling
-        panic!("ParseError: <{}>:{}", self.peek(), message)
+        Err(Error::ParseError(self.peek().line, message.to_string()))
     }
 
     fn match_types(&mut self, types: Vec<TokenType>) -> bool {
